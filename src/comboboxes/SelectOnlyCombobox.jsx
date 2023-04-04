@@ -1,3 +1,9 @@
+/*
+  ------------------------------ Select Only Combobox ------------------------------
+
+  https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-select-only/
+
+ */
 import * as React from "react";
 import {
   useFloating,

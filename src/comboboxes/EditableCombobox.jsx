@@ -1,31 +1,31 @@
+/*
+  ------------------------------ Editable Combobox ------------------------------
+
+  https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-none/
+
+ */
 import * as React from "react";
 import {
   useFloating,
-  offset,
   flip,
   shift,
   size,
   useListNavigation,
   useDismiss,
   useInteractions,
-  useRole,
-  useFocus,
-  useId,
-  useTypeahead,
   useClick,
   autoUpdate,
-  FloatingPortal,
-  FloatingFocusManager,
 } from "@floating-ui/react";
 import { ComboboxCtx, useComboboxCtx } from "./Context.jsx";
 
 const Provider = ({ children, ...usrConf }) => {
-  const ctx = useCombobox(usrConf || {});
+  const ctx = useCombobox(usrConf);
   return <ComboboxCtx.Provider value={ctx}>{children}</ComboboxCtx.Provider>;
 };
 
 function useCombobox({
   name,
+  labelledBy = "",
   options: initialOptions,
   onSelect = () => {},
   initialOpen = false,
@@ -65,12 +65,6 @@ function useCombobox({
     }),
     useDismiss(data.context),
     useClick(data.context, { keyboardHandlers: true }),
-    useTypeahead(data.context, {
-      listRef: optionsRef,
-      activeIndex,
-      onMatch: setActiveIndex,
-      resetMs: 500,
-    }),
   ]);
 
   const onInputValueChange = (e) => {
@@ -78,6 +72,7 @@ function useCombobox({
     if (e.target) {
       value = e.target.value;
       setIsOpen(true);
+      setActiveIndex(null);
     } else {
       value = e;
     }
@@ -87,6 +82,7 @@ function useCombobox({
   return React.useMemo(
     () => ({
       name,
+      labelledBy,
       isOpen,
       setIsOpen,
       inputValue,
@@ -108,7 +104,6 @@ function Trigger({ placeholder, className, ...props }) {
   const ctx = useComboboxCtx();
   return (
     <input
-      readOnly
       id={`${ctx.name}-trigger`}
       ref={ctx.refs.setReference}
       className={`combobox trigger ${className}`}
@@ -116,7 +111,8 @@ function Trigger({ placeholder, className, ...props }) {
       aria-controls={`${ctx.name}-listbox`}
       aria-expanded={ctx.isOpen}
       aria-haspopup="listbox"
-      aria-labelledby=""
+      aria-labelledby={ctx.labelledBy}
+      aria-autocomplete="none"
       tabIndex={0}
       name={ctx.name}
       type="text"
@@ -132,14 +128,10 @@ function Trigger({ placeholder, className, ...props }) {
                 ctx.setActiveIndex(null);
                 ctx.setIsOpen(false);
                 ctx.onSelect(ctx.options[ctx.activeIndex]);
-              }
-              break;
-            case "Space":
-              if (ctx.activeIndex != null && ctx.options[ctx.activeIndex]) {
-                ctx.onInputValueChange(ctx.options[ctx.activeIndex]);
+              } else {
                 ctx.setActiveIndex(null);
                 ctx.setIsOpen(false);
-                ctx.onSelect(ctx.options[ctx.activeIndex]);
+                ctx.onSelect(ctx.inputValue);
               }
               break;
             case "Escape":
@@ -151,16 +143,20 @@ function Trigger({ placeholder, className, ...props }) {
               }
               break;
             case "Tab":
-              if (
-                ctx.isOpen &&
-                ctx.activeIndex != null &&
-                ctx.options[ctx.activeIndex]
-              ) {
+              if (!ctx.isOpen) {
+                return;
+              }
+              if (ctx.activeIndex != null && ctx.options[ctx.activeIndex]) {
                 ctx.onInputValueChange(ctx.options[ctx.activeIndex]);
                 ctx.setActiveIndex(null);
                 ctx.setIsOpen(false);
                 ctx.refs.domReference.current?.blur();
                 ctx.onSelect(ctx.options[ctx.activeIndex]);
+              } else {
+                ctx.setActiveIndex(null);
+                ctx.setIsOpen(false);
+                ctx.refs.domReference.current?.blur();
+                ctx.onSelect(ctx.inputValue);
               }
             default:
               break;
@@ -182,6 +178,7 @@ function Listbox({ renderOption, className, ...props }) {
           ref={ctx.refs.setFloating}
           className={`combobox listbox ${className}`}
           role="listbox"
+          aria-labelledby={ctx.labelledBy}
           style={{
             position: ctx.strategy,
             top: ctx.y ?? 0,
@@ -233,7 +230,7 @@ const Option = React.forwardRef(
   }
 );
 
-export const SelectOnlyCombobox = {
+export const EditableCombobox = {
   Provider,
   Trigger,
   Listbox,
