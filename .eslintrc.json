@@ -1,0 +1,19 @@
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2022": true
+  },
+  "extends": ["airbnb", "airbnb/hooks", "prettier"],
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "rules": {
+    "import/prefer-default-export": "off",
+    "import/extensions": ["error", "ignorePackages"],
+    "import/no-unresolved": "off",
+    "import/no-absolute-path": "off",
+    "react/prop-types": "off"
+  }
+}

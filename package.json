@@ -1,0 +1,51 @@
+{
+  "name": "afadmin_utils",
+  "version": "0.0.1",
+  "description": "afadmin_utils-summary",
+  "homepage": "https://github.com/pnoulis/afadmin_utils#readme",
+  "bugs": "https://github.com/pnoulis/afadmin_utils/issues",
+  "keywords": [
+    "afadmin_utils-keywords"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pnoulis/afadmin_utils.git"
+  },
+  "scripts": {
+    "dev": "make run",
+    "build": "make build",
+    "test": "make test"
+  },
+  "type": "module",
+  "private": true,
+  "browser": true,
+  "engines": {
+    "node": ">=19.8.1",
+    "npm": ">=9.5.1"
+  },
+  "dependencies": {
+    "@types/react": "^18.0.33",
+    "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-react": "^3.1.0",
+    "pino": "^8.11.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.10.0",
+    "styled-components": "^5.3.9",
+    "vite": "^4.2.1",
+    "vite-plugin-svgr": "^2.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.37.0",
+    "eslint-config-airbnb": "^19.0.4",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-jest": "^27.2.1",
+    "eslint-plugin-jsx-a11y": "^6.7.1",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "pino-pretty": "^10.0.0",
+    "prettier": "^2.8.7",
+    "vitest": "^0.29.8"
+  }
+}
