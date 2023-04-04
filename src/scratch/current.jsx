@@ -1,1 +1,1 @@
-export { default } from "./EditableCombobox";
+export { default } from "./EditableCombobox.autoComplete.manualSelection";

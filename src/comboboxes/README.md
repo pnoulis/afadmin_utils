@@ -20,6 +20,14 @@ user interfaces such as composite widgets. Some of the functionality it
 provides is:
     
 Positioning, Keyboard navigation, touch events and more.
+
+- [Fuse.js](https://fusejs.io)
+
+**version:** 6.6.2
+
+Fuse.js is a fuzzy-search library
+
+It is utilized in the Autocompletion Editable Comboboxes
     
 - [React](https://react.dev/)
 
