@@ -6,10 +6,29 @@ import svgr from "vite-plugin-svgr";
 
 // https:vitejs.dev/config/
 export default defineConfig({
-  plugins: [react(), svgr()],
+  // plugins: [react(), svgr()],
   build: {
     outDir: "build",
     target: "esnext",
+    sourcemap: true,
+    emptyOutDir: true,
+    copyPublicDir: false,
+    lib: {
+      entry: {
+        comboboxes: "./src/comboboxes/index.js",
+      },
+      name: "afadmin_utils",
+      formats: ["es"],
+    },
+    rollupOptions: {
+      external: ["react", "react-dom", "fuse.js"],
+      output: {
+        globals: {
+          react: "React",
+          ["react-dom"]: "ReactDOM",
+        },
+      },
+    },
   },
   test: {
     // ...
