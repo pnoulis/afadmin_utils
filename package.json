@@ -12,7 +12,8 @@
   "scripts": {
     "dev": "make run",
     "build": "make build",
-    "test": "make test"
+    "test": "make test",
+    "install": "make build-prod"
   },
   "exports": {
     ".": {
