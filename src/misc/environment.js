@@ -37,9 +37,9 @@ function isMode(mode) {
 
 function getEnvar(envar, required = true, defaultValue = "") {
   let value;
-  if (isMode("prod")) {
-    throw new Error("getEnvar does not work in production mode for now");
-  }
+  // if (isMode("prod")) {
+  //   throw new Error("getEnvar does not work in production mode for now");
+  // }
   if (isRuntime("node")) {
     value = process.env[envar] || defaultValue;
   } else {
