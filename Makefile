@@ -19,6 +19,7 @@ LINTER = npx eslint
 FORMATER = npx prettier
 VITEST = npx vitest
 PRETTY_OUTPUT = npx pino-pretty
+MAKE_ENV = ./scripts/dotenv.sh --pkgdir=. --envdir=./config/env
 
 .PHONY: all
 all: run
@@ -36,34 +37,35 @@ scratch: env
 	set -a; source ./.env && node ./tmp/scratch.js | $(PRETTY_OUTPUT)
 
 .PHONY: run
-run: dirs env-dev
-	set -a; BUILD_TARGET=development; source ./.env && $(BUILD_SYS) serve \
-	--mode development $(params)
+run: dirs
+	$(MAKE_ENV) --mode=dev -e='TARGET=dev'
+	set -a; $(MAKE_ENV) --mode=dev --target=dev; source ./.env && $(BUILD_SYS) serve \
+	--mode dev
 
 .PHONY: run-staging
-run-staging: dirs env-staging
-	set -a; BUILD_TARGET=development; source ./.env && $(BUILD_SYS) serve \
-	--mode staging $(params)
+run-staging: dirs
+	set -a; $(MAKE_ENV) --mode=staging --target=dev; source ./.env && $(BUILD_SYS) serve \
+	--mode staging
 
 .PHONY: run-prod
-run-prod: dirs env-prod
-	set -a; BUILD_TARGET=development; source ./.env && $(BUILD_SYS) serve \
-	--mode production $(params)
+run-prod: dirs
+	set -a; $(MAKE_ENV) --mode=prod --target=dev; source ./.env && $(BUILD_SYS) serve \
+	--mode prod
 
 .PHONY: build
-build: env-dev
-	set -a; BUILD_TARGET=production; source ./.env && $(BUILD_SYS) build \
-	--mode development $(params)
+build:
+	set -a; $(MAKE_ENV) --mode=dev --target=prod; source ./.env && $(BUILD_SYS) build \
+	--mode dev
 
 .PHONY: build-staging
-build-staging: env-staging
-	set -a; BUILD_TARGET=production; source ./.env && $(BUILD_SYS) build \
-	--mode staging $(params)
+build-staging:
+	set -a; $(MAKE_ENV) --mode=staging --target=prod; source ./.env && $(BUILD_SYS) build \
+	--mode staging
 
 .PHONY: build-prod
-build-prod: env-prod
-	set -a; BUILD_TARGET=production; source ./.env && $(BUILD_SYS) build \
-	--mode production $(params)
+build-prod:
+	set -a; $(MAKE_ENV) --mode=prod --target=prod; source ./.env && $(BUILD_SYS) build \
+	--mode prod
 
 .PHONY: test
 test: env-dev

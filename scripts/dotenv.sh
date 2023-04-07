@@ -14,7 +14,7 @@ declare -gA SWITCH_PREFIXES=()
 declare -gA ENV=()
 
 usage() {
-    cat <<EOF
+  cat <<EOF
 ${0} was created with the intented goals of:
 
      1. Decouple the loading of the environment from any
@@ -138,277 +138,281 @@ EOF
 }
 
 main() {
-    parse_args "$@"
-    set -- "${POSARGS[@]}"
+  parse_args "$@"
+  set -- "${POSARGS[@]}"
 
-    MODE=${MODE:=dev}
+  MODE=${MODE:=dev}
 
-    # If PKGDIR or ENVDIR do not pass tests exit
-    if [[ -z "${PKGDIR:-}" ]]; then
-        die "Missing \$PKGDIR"
-    fi
-    PKGDIR=$(realpath "${PKGDIR}")
-    cd -- "${PKGDIR}" || die "Could not cd into PKGDIR:${PKGDIR}"
-    ENVDIR=${ENVDIR:-${PKGDIR}/config/env}
-    if [[ -z "${ENVDIR:-}" ]]; then
-        die "Missing \$ENVDIR"
-    fi
-    ENVDIR=$(realpath "${ENVDIR}")
-    cd -- "${ENVDIR}" || die "Could not cd into ENVDIR:${ENVDIR}"
+  # If PKGDIR or ENVDIR do not pass tests exit
+  if [[ -z "${PKGDIR:-}" ]]; then
+    die "Missing \$PKGDIR"
+  fi
+  PKGDIR=$(realpath "${PKGDIR}")
+  cd -- "${PKGDIR}" || die "Could not cd into PKGDIR:${PKGDIR}"
+  ENVDIR=${ENVDIR:-${PKGDIR}/config/env}
+  if [[ -z "${ENVDIR:-}" ]]; then
+    die "Missing \$ENVDIR"
+  fi
+  ENVDIR=$(realpath "${ENVDIR}")
+  cd -- "${ENVDIR}" || die "Could not cd into ENVDIR:${ENVDIR}"
 
-    load_static_env
-    load_local_env
-    load_cmd_env
-    switch_prefixes
-    expand_envars
-    ENV["MODE"]=${MODE}
-    write_env
+  load_static_env
+  load_local_env
+  load_cmd_env
+  switch_prefixes
+  expand_envars
+  ENV["MODE"]=${MODE}
+  ENV["TARGET"]=${TARGET}
+  write_env
 }
 
 ensure_newline() {
-    find . -mindepth 1 -type f -iregex '.*env.*' | xargs -I {} sed -i -e '$a\' {}
+  find . -mindepth 1 -type f -iregex '.*env.*' | xargs -I {} sed -i -e '$a\' {}
 }
 
 switch_prefixes() {
-    if (( "${#SWITCH_PREFIXES[@]}" == 0 )); then
-        return
+  if (( "${#SWITCH_PREFIXES[@]}" == 0 )); then
+    return
+  fi
+  local -A filtered=()
+  local newkey
+  local prefixed
+  for envar in "${!ENV[@]}"; do
+    prefixed=0
+    for filter in "${!SWITCH_PREFIXES[@]}"; do
+      newkey=
+      if [[ "$filter" == 'add' ]]; then
+        newkey="${SWITCH_PREFIXES[$filter]}${envar}"
+        filtered[$newkey]=${ENV[$envar]}
+        envar=${newkey}
+        prefixed=1
+        break
+      elif [[ "${envar:-}" =~ "$filter" ]]; then
+        newkey="${envar/$filter/${SWITCH_PREFIXES[$filter]}}"
+        filtered[$newkey]=${ENV[$envar]}
+        envar=${newkey}
+        prefixed=1
+        break
+      fi
+    done
+    if (( !$prefixed )); then
+      filtered[$envar]=${ENV[$envar]}
     fi
-    local -A filtered=()
-    local newkey
-    local prefixed
-    for envar in "${!ENV[@]}"; do
-        prefixed=0
-        for filter in "${!SWITCH_PREFIXES[@]}"; do
-            newkey=
-            if [[ "$filter" == 'add' ]]; then
-                newkey="${SWITCH_PREFIXES[$filter]}${envar}"
-                filtered[$newkey]=${ENV[$envar]}
-                envar=${newkey}
-                prefixed=1
-                break
-            elif [[ "${envar:-}" =~ "$filter" ]]; then
-                newkey="${envar/$filter/${SWITCH_PREFIXES[$filter]}}"
-                filtered[$newkey]=${ENV[$envar]}
-                envar=${newkey}
-                prefixed=1
-                break
-            fi
-        done
-        if (( !$prefixed )); then
-            filtered[$envar]=${ENV[$envar]}
-        fi
-    done
-    unset ENV || die "failed to unset ENV in switch_prefixes"
-    declare -gA ENV
-    for i in "${!filtered[@]}"; do
-        ENV[$i]=${filtered[$i]}
-    done
+  done
+  unset ENV || die "failed to unset ENV in switch_prefixes"
+  declare -gA ENV
+  for i in "${!filtered[@]}"; do
+    ENV[$i]=${filtered[$i]}
+  done
 }
 
 expand_envars() {
-    set -o allexport
-    for i in "${!ENV[@]}"; do
-      export ${i}=${ENV[$i]}
-    done
+  set -o allexport
+  for i in "${!ENV[@]}"; do
+    export ${i}=${ENV[$i]}
+  done
 
-    for i in "${!ENV[@]}"; do
-      declare "${i}"=$(eval echo "${ENV[$i]}")
-      ENV[$i]=$(eval echo "${ENV[$i]}")
-    done
+  for i in "${!ENV[@]}"; do
+    declare "${i}"=$(eval echo "${ENV[$i]}")
+    ENV[$i]=$(eval echo "${ENV[$i]}")
+  done
 }
 
 load_cmd_env() {
-    for i in "${!ENV[@]}"; do
-        if [[ -n "${!i}" ]]; then
-            ENV[$i]=${!i}
-        else
-            ENV[$i]=${ENV[$i]}
-        fi
-    done
+  for i in "${!ENV[@]}"; do
+    if [[ -n "${!i}" ]]; then
+      ENV[$i]=${!i}
+    else
+      ENV[$i]=${ENV[$i]}
+    fi
+  done
 }
 
 write_env() {
-    cd $PKGDIR
-    cat /dev/null > .env
-    for i in "${!ENV[@]}"; do
-        echo "${ENV_PREFIX:-}${i}=${ENV[$i]}" >> .env
-    done
+  cd $PKGDIR
+  cat /dev/null > .env
+  for i in "${!ENV[@]}"; do
+    echo "${ENV_PREFIX:-}${i}=${ENV[$i]}" >> .env
+  done
 }
 
 load_local_env() {
-    cd $PKGDIR
-    ensure_newline
-    if [[ -f "./.env.local" ]]; then
+  cd $PKGDIR
+  ensure_newline
+  if [[ -f "./.env.local" ]]; then
+    while IFS== read -r key value; do
+      ENV[$key]=$value
+    done < "./.env.local"
+  fi
+  case "${MODE:-}" in
+    dev | development)
+      if [[ -f './.env.development.local' ]]; then
         while IFS== read -r key value; do
-            ENV[$key]=$value
-        done < "./.env.local"
-    fi
-    case "${MODE:-}" in
-        dev | development)
-            if [[ -f './.env.development.local' ]]; then
-                while IFS== read -r key value; do
-                    ENV["$key"]="$value"
-                done < "./.env.development.local"
-            elif [[ -f './.env.dev.local' ]]; then
-                while IFS== read -r key value; do
-                    ENV["$key"]="$value"
-                done < "./.env.dev.local"
-            fi
-            ;;
-        stag | staging)
-            if [[ -f './.env.staging.local' ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./.env.staging.local"
-            elif [[ -f './.env.stag.local' ]]; then
-                while IFS== read -r key value; do
-                    ENV["$key"]="$value"
-                done < "./.env.stag.local"
-            fi
-            ;;
-        prod | production)
-            if [[ -f './.env.production.local' ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./.env.production.local"
-            elif [[ -f './.env.prod.local' ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./.env.prod.local"
-            fi
-            ;;
-        *)
-            die "Unrecognized mode:${MODE:-}"
-            ;;
-    esac
+          ENV["$key"]="$value"
+        done < "./.env.development.local"
+      elif [[ -f './.env.dev.local' ]]; then
+        while IFS== read -r key value; do
+          ENV["$key"]="$value"
+        done < "./.env.dev.local"
+      fi
+      ;;
+    stag | staging)
+      if [[ -f './.env.staging.local' ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./.env.staging.local"
+      elif [[ -f './.env.stag.local' ]]; then
+        while IFS== read -r key value; do
+          ENV["$key"]="$value"
+        done < "./.env.stag.local"
+      fi
+      ;;
+    prod | production)
+      if [[ -f './.env.production.local' ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./.env.production.local"
+      elif [[ -f './.env.prod.local' ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./.env.prod.local"
+      fi
+      ;;
+    *)
+      die "Unrecognized mode:${MODE:-}"
+      ;;
+  esac
 }
 
 load_static_env() {
-    cd $ENVDIR
-    ensure_newline
-    while IFS== read -r key value; do
-        ENV[$key]=$value
-    done < "./env"
-    case "${MODE:-}" in
-        dev | development)
-            if [[ -f './env.development' ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./env.development"
-            elif [[ -f "./env.dev" ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./env.dev"
-            fi
-            ;;
-        stag | staging)
-            if [[ -f './env.staging' ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./env.staging"
-            elif [[ -f "./env.stag" ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./env.stag"
-            fi
-            ;;
-        prod | production)
-            if [[ -f './env.production' ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./env.production"
-            elif [[ -f "./env.prod" ]]; then
-                while IFS== read -r key value; do
-                    ENV[$key]=$value
-                done < "./env.prod"
-            fi
-            ;;
-        *)
-            die "Unrecognized mode:${MODE:-}"
-            ;;
-    esac
+  cd $ENVDIR
+  ensure_newline
+  while IFS== read -r key value; do
+    ENV[$key]=$value
+  done < "./env"
+  case "${MODE:-}" in
+    dev | development)
+      if [[ -f './env.development' ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./env.development"
+      elif [[ -f "./env.dev" ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./env.dev"
+      fi
+      ;;
+    stag | staging)
+      if [[ -f './env.staging' ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./env.staging"
+      elif [[ -f "./env.stag" ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./env.stag"
+      fi
+      ;;
+    prod | production)
+      if [[ -f './env.production' ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./env.production"
+      elif [[ -f "./env.prod" ]]; then
+        while IFS== read -r key value; do
+          ENV[$key]=$value
+        done < "./env.prod"
+      fi
+      ;;
+    *)
+      die "Unrecognized mode:${MODE:-}"
+      ;;
+  esac
 }
 
 parse_args() {
-    declare -ga POSARGS=()
-    while (($# > 0)); do
-        case "${1:-}" in
-            -m | --mode*)
-                MODE=$(OPTIONAL=0 parse_param "$@") || shift $?
-                ;;
-            --pkgdir*)
-                PKGDIR=$(parse_param "$@") || shift $?
-                ;;
-            --envdir*)
-                ENVDIR=$(parse_param "$@") || shift $?
-                ;;
-            --switch-prefixes*)
-                local params=$(parse_param "$@") || shift $?
-                while read -d',' -r pair; do
-                    if [[ -z "${pair%%:*}" ]]; then
-                        SWITCH_PREFIXES["add"]=${pair##*:}
-                    else
-                        SWITCH_PREFIXES[${pair%%:*}]=${pair##*:}
-                    fi
-                done <<<"${params},"
-                ;;
-            --debug)
-                DEBUG=0
-                ;;
-            -h | --help)
-                usage
-                exit 0
-                ;;
-            -[a-zA-Z][a-zA-Z]*)
-                local i="${1:-}"
-                shift
-                for i in $(echo "$i" | grep -o '[a-zA-Z]'); do
-                    set -- "-$i" "$@"
-                done
-                continue
-                ;;
-            --)
-                shift
-                POSARGS+=("$@")
-                ;;
-            -[a-zA-Z]* | --[a-zA-Z]*)
-                die "Unrecognized argument ${1:-}"
-                ;;
-            *)
-                POSARGS+=("${1:-}")
-                ;;
-        esac
+  declare -ga POSARGS=()
+  while (($# > 0)); do
+    case "${1:-}" in
+      -m | --mode*)
+        MODE=$(OPTIONAL=0 parse_param "$@") || shift $?
+        ;;
+      -t | --target*)
+        TARGET=$(parse_param "$@") || shift $?
+        ;;
+      --pkgdir*)
+        PKGDIR=$(parse_param "$@") || shift $?
+        ;;
+      --envdir*)
+        ENVDIR=$(parse_param "$@") || shift $?
+        ;;
+      --switch-prefixes*)
+        local params=$(parse_param "$@") || shift $?
+        while read -d',' -r pair; do
+          if [[ -z "${pair%%:*}" ]]; then
+            SWITCH_PREFIXES["add"]=${pair##*:}
+          else
+            SWITCH_PREFIXES[${pair%%:*}]=${pair##*:}
+          fi
+        done <<<"${params},"
+        ;;
+      --debug)
+        DEBUG=0
+        ;;
+      -h | --help)
+        usage
+        exit 0
+        ;;
+      -[a-zA-Z][a-zA-Z]*)
+        local i="${1:-}"
         shift
-    done
+        for i in $(echo "$i" | grep -o '[a-zA-Z]'); do
+          set -- "-$i" "$@"
+        done
+        continue
+        ;;
+      --)
+        shift
+        POSARGS+=("$@")
+        ;;
+      -[a-zA-Z]* | --[a-zA-Z]*)
+        die "Unrecognized argument ${1:-}"
+        ;;
+      *)
+        POSARGS+=("${1:-}")
+        ;;
+    esac
+    shift
+  done
 }
 
 parse_param() {
-    local param arg
-    local -i toshift=0
+  local param arg
+  local -i toshift=0
 
-    if (($# == 0)); then
-        return $toshift
-    elif [[ "$1" =~ .*=.* ]]; then
-        param="${1%%=*}"
-        arg="${1#*=}"
-    elif [[ "${2-}" =~ ^[^-].+ ]]; then
-        param="$1"
-        arg="$2"
-        ((toshift++))
-    fi
-
-    if [[ -z "${arg-}" && ! "${OPTIONAL-}" ]]; then
-        die "${param:-$1} requires an argument"
-    fi
-
-    echo "${arg:-}"
+  if (($# == 0)); then
     return $toshift
+  elif [[ "$1" =~ .*=.* ]]; then
+    param="${1%%=*}"
+    arg="${1#*=}"
+  elif [[ "${2-}" =~ ^[^-].+ ]]; then
+    param="$1"
+    arg="$2"
+    ((toshift++))
+  fi
+
+  if [[ -z "${arg-}" && ! "${OPTIONAL-}" ]]; then
+    die "${param:-$1} requires an argument"
+  fi
+
+  echo "${arg:-}"
+  return $toshift
 }
 
 die() {
-    exec 1>&2
-    echo "$@"
-    exit 1
+  exec 1>&2
+  echo "$@"
+  exit 1
 }
 
 main "$@"
