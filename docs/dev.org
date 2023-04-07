@@ -1,2 +1,15 @@
 * DONE branch out vite.config.js into development and production mode
 CLOSED: [2023-04-07 Fri 10:17]
+* Branching Model
+This repository uses a trunk-based development model.
+
+
+** Release process
+bump package.json version
+write release notes -> changelog
+push to github
+add tag
+push tag to github
+create a github release
+
+https://common-changelog.org/
