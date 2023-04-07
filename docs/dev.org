@@ -1,0 +1,2 @@
+* DONE branch out vite.config.js into development and production mode
+CLOSED: [2023-04-07 Fri 10:17]

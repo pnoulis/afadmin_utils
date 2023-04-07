@@ -37,32 +37,32 @@ scratch: env
 
 .PHONY: run
 run: dirs env-dev
-	NODE_ENV=development $(BUILD_SYS) serve \
+	set -a; BUILD_TARGET=development; source ./.env && $(BUILD_SYS) serve \
 	--mode development $(params)
 
 .PHONY: run-staging
 run-staging: dirs env-staging
-	NODE_ENV=development $(BUILD_SYS) serve \
+	set -a; BUILD_TARGET=development; source ./.env && $(BUILD_SYS) serve \
 	--mode staging $(params)
 
 .PHONY: run-prod
 run-prod: dirs env-prod
-	NODE_ENV=development $(BUILD_SYS) serve \
+	set -a; BUILD_TARGET=development; source ./.env && $(BUILD_SYS) serve \
 	--mode production $(params)
 
 .PHONY: build
-build:
-	NODE_ENV=production $(BUILD_SYS) build \
+build: env-dev
+	set -a; BUILD_TARGET=production; source ./.env && $(BUILD_SYS) build \
 	--mode development $(params)
 
 .PHONY: build-staging
-build-staging:
-	NODE_ENV=production $(BUILD_SYS) build \
+build-staging: env-staging
+	set -a; BUILD_TARGET=production; source ./.env && $(BUILD_SYS) build \
 	--mode staging $(params)
 
 .PHONY: build-prod
-build-prod:
-	NODE_ENV=production $(BUILD_SYS) build \
+build-prod: env-prod
+	set -a; BUILD_TARGET=production; source ./.env && $(BUILD_SYS) build \
 	--mode production $(params)
 
 .PHONY: test

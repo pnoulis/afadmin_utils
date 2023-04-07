@@ -1,1 +1,1 @@
-export { default } from "./BoundEditableListCombobox";
+export { default } from "./EditableCombobox";

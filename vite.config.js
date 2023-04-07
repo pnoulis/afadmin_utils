@@ -1,12 +1,27 @@
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
 import { configDefaults } from "vitest/config";
+import { getEnvar } from "./src/misc/environment.js";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
 
+const conf = {};
+const BUILD_TARGET = getEnvar("BUILD_TARGET", true, "production");
+const MODE = getEnvar("MODE", true, "production");
+
+if (/dev/.test(BUILD_TARGET)) {
+  conf.plugins = [react(), svgr()];
+}
+
+if (!/dev/.test(MODE)) {
+  conf.build = {
+    outDir: "dist",
+  };
+}
+
 // https:vitejs.dev/config/
 export default defineConfig({
-  // plugins: [react(), svgr()],
+  ...conf,
   build: {
     outDir: "build",
     target: "esnext",
@@ -29,6 +44,7 @@ export default defineConfig({
         },
       },
     },
+    ...conf.build,
   },
   test: {
     // ...
