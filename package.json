@@ -12,15 +12,14 @@
   "scripts": {
     "dev": "make run",
     "build": "make build",
-    "test": "make test",
-    "install": "make build-prod"
+    "test": "make test"
   },
   "exports": {
     ".": {
-      "import": "./build/afadmin_utils.js"
+      "import": "./dist/afadmin_utils.js"
     },
     "./comboboxes": {
-      "import": "./build/comboboxes.js"
+      "import": "./dist/comboboxes.js"
     }
   },
   "type": "module",
